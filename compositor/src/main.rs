@@ -59,3 +59,22 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn selects_winit_when_display_set() {
+        unsafe { std::env::set_var("DISPLAY", ":0") };
+        assert!(matches!(select_backend(), Backend::Winit));
+        unsafe { std::env::remove_var("DISPLAY") };
+    }
+
+    #[test]
+    fn selects_winit_when_wayland_display_set() {
+        unsafe { std::env::set_var("WAYLAND_DISPLAY", "wayland-0") };
+        assert!(matches!(select_backend(), Backend::Winit));
+        unsafe { std::env::remove_var("WAYLAND_DISPLAY") };
+    }
+}
