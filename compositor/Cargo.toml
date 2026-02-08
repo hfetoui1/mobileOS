@@ -18,6 +18,10 @@ smithay = { version = "0.7", features = [
     "wayland_frontend",
 ] }
 smithay-drm-extras = { version = "0.1", default-features = false }
+drm-fourcc = "2"
+drm = "0.14"
+rustix = { workspace = true }
+libc = "0.2"
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }

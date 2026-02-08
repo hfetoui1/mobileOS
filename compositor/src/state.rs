@@ -19,6 +19,8 @@ use smithay::wayland::shm::ShmState;
 use smithay::wayland::socket::ListeningSocketSource;
 use tracing::info;
 
+use crate::udev::DrmState;
+
 pub struct Compositor {
     pub start_time: std::time::Instant,
     pub socket_name: OsString,
@@ -37,6 +39,8 @@ pub struct Compositor {
     pub popups: PopupManager,
 
     pub seat: Seat<Compositor>,
+
+    pub drm: Option<DrmState>,
 }
 
 #[derive(Default)]
@@ -89,6 +93,7 @@ impl Compositor {
             layer_shell_state,
             popups,
             seat,
+            drm: None,
         }
     }
 

@@ -4,6 +4,7 @@
 mod handlers;
 mod input;
 mod state;
+mod udev;
 mod winit;
 
 use smithay::reexports::calloop::EventLoop;
@@ -11,6 +12,19 @@ use smithay::reexports::wayland_server::Display;
 use tracing::info;
 
 use crate::state::Compositor;
+
+enum Backend {
+    Winit,
+    Udev,
+}
+
+fn select_backend() -> Backend {
+    if std::env::var("WAYLAND_DISPLAY").is_ok() || std::env::var("DISPLAY").is_ok() {
+        Backend::Winit
+    } else {
+        Backend::Udev
+    }
+}
 
 fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -26,7 +40,16 @@ fn main() -> anyhow::Result<()> {
 
     info!(socket = ?state.socket_name, "wayland socket ready");
 
-    winit::init_winit(&mut event_loop, &mut state)?;
+    match select_backend() {
+        Backend::Winit => {
+            info!("using winit backend (desktop development)");
+            winit::init_winit(&mut event_loop, &mut state)?;
+        }
+        Backend::Udev => {
+            info!("using udev/DRM backend (hardware)");
+            udev::init_udev(&mut event_loop, &mut state)?;
+        }
+    }
 
     // SAFETY: called before spawning any threads, single-threaded at this point
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };

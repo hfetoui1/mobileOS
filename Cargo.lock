@@ -2609,6 +2609,10 @@ name = "mos-compositor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "drm",
+ "drm-fourcc",
+ "libc",
+ "rustix 1.1.3",
  "smithay",
  "smithay-drm-extras",
  "tracing",
