@@ -1,7 +1,197 @@
-// ABOUTME: Placeholder shell UI for build pipeline validation.
-// ABOUTME: Will be replaced with full lock screen, home screen, and status bar.
+// ABOUTME: Declarative UI for the MobileOS shell — status bar, lock screen, and home screen.
+// ABOUTME: State machine driven by a `locked` bool property controlling screen visibility.
+
+component StatusBar inherits Rectangle {
+    in property <string> time: "12:00";
+    in property <string> battery: "85%";
+    in property <string> network: "WiFi";
+
+    height: 32px;
+    background: #1a1a2e;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        alignment: space-between;
+
+        Text {
+            text: root.time;
+            color: white;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+
+        HorizontalLayout {
+            spacing: 12px;
+
+            Text {
+                text: root.network;
+                color: #a0a0c0;
+                font-size: 12px;
+                vertical-alignment: center;
+            }
+
+            Text {
+                text: root.battery;
+                color: #a0a0c0;
+                font-size: 12px;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+component AppIcon inherits Rectangle {
+    in property <string> label: "App";
+    in property <color> icon-color: #4a90d9;
+    callback launched();
+
+    width: 72px;
+    height: 92px;
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 4px;
+        padding: 4px;
+
+        Rectangle {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background: root.icon-color;
+
+            Text {
+                text: root.label;
+                color: white;
+                font-size: 10px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+
+        Text {
+            text: root.label;
+            color: white;
+            font-size: 11px;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    TouchArea {
+        clicked => { root.launched(); }
+    }
+}
+
+component HomeScreen inherits Rectangle {
+    callback app-launched(string);
+
+    background: #16213e;
+
+    GridLayout {
+        padding: 20px;
+        spacing: 16px;
+
+        Row {
+            AppIcon { label: "Phone"; icon-color: #27ae60; launched => { root.app-launched("phone"); } }
+            AppIcon { label: "Messages"; icon-color: #2980b9; launched => { root.app-launched("messages"); } }
+            AppIcon { label: "Settings"; icon-color: #8e44ad; launched => { root.app-launched("settings"); } }
+        }
+
+        Row {
+            AppIcon { label: "Terminal"; icon-color: #2c3e50; launched => { root.app-launched("terminal"); } }
+            AppIcon { label: "Files"; icon-color: #d35400; launched => { root.app-launched("files"); } }
+            AppIcon { label: "Browser"; icon-color: #c0392b; launched => { root.app-launched("browser"); } }
+        }
+
+        Row {
+            AppIcon { label: "Camera"; icon-color: #16a085; launched => { root.app-launched("camera"); } }
+            AppIcon { label: "Gallery"; icon-color: #e74c3c; launched => { root.app-launched("gallery"); } }
+            AppIcon { label: "Music"; icon-color: #f39c12; launched => { root.app-launched("music"); } }
+        }
+    }
+}
+
+component LockScreen inherits Rectangle {
+    in property <string> time: "12:00";
+    in property <string> date: "Sunday, January 1";
+    callback unlock-requested();
+
+    background: #0a0a1a;
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 8px;
+
+        Text {
+            text: root.time;
+            color: white;
+            font-size: 64px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.date;
+            color: #808090;
+            font-size: 16px;
+            horizontal-alignment: center;
+        }
+
+        Rectangle { height: 80px; }
+
+        Rectangle {
+            height: 48px;
+            width: 200px;
+            border-radius: 24px;
+            background: #ffffff20;
+            horizontal-stretch: 0;
+
+            Text {
+                text: "Tap to unlock";
+                color: #c0c0d0;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+
+            TouchArea {
+                clicked => { root.unlock-requested(); }
+            }
+        }
+    }
+}
 
 export component ShellWindow inherits Window {
     title: "MobileOS Shell";
-    Text { text: "Shell"; }
+    default-font-family: "sans-serif";
+    background: #0a0a1a;
+
+    in-out property <bool> locked: true;
+    in property <string> time: "12:00";
+    in property <string> date: "Sunday, January 1";
+    in property <string> battery: "85%";
+    in property <string> network: "WiFi";
+    callback app-launched(string);
+
+    VerticalLayout {
+        StatusBar {
+            time: root.time;
+            battery: root.battery;
+            network: root.network;
+        }
+
+        if root.locked: LockScreen {
+            time: root.time;
+            date: root.date;
+            unlock-requested => {
+                root.locked = false;
+            }
+        }
+
+        if !root.locked: HomeScreen {
+            app-launched(name) => {
+                root.app-launched(name);
+            }
+        }
+    }
 }
