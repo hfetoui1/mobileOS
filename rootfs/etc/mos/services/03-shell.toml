@@ -1,0 +1,10 @@
+[service]
+name = "shell"
+exec = "/usr/bin/mos-shell"
+depends_on = ["compositor"]
+restart = "on-failure"
+service_type = "simple"
+
+[service.environment]
+RUST_LOG = "info"
+XDG_RUNTIME_DIR = "/run"

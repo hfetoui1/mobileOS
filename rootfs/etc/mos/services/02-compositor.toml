@@ -1,0 +1,10 @@
+[service]
+name = "compositor"
+exec = "/usr/bin/mos-compositor"
+depends_on = ["seatd"]
+restart = "on-failure"
+service_type = "simple"
+
+[service.environment]
+RUST_LOG = "info"
+XDG_RUNTIME_DIR = "/run"

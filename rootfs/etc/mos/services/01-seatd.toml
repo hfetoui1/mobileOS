@@ -1,0 +1,6 @@
+[service]
+name = "seatd"
+exec = "/usr/sbin/seatd"
+args = ["-g", "video"]
+restart = "always"
+service_type = "simple"

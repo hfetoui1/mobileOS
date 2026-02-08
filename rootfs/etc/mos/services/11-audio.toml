@@ -3,3 +3,4 @@ name = "audio"
 exec = "/usr/bin/mos-audio"
 restart = "always"
 service_type = "simple"
+depends_on = ["dbus"]

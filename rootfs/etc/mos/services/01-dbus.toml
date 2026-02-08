@@ -1,0 +1,9 @@
+# ABOUTME: D-Bus session daemon for inter-service communication.
+# ABOUTME: Starts before all other services since they depend on D-Bus.
+
+[service]
+name = "dbus"
+exec = "/usr/bin/dbus-daemon"
+args = ["--config-file=/etc/dbus-1/session.conf", "--nofork", "--nopidfile"]
+restart = "always"
+service_type = "simple"

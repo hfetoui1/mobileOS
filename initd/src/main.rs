@@ -31,6 +31,13 @@ fn main() {
 
     mount::mount_early_filesystems();
 
+    // Create runtime dirs and set D-Bus session bus address for child services
+    let _ = std::fs::create_dir_all("/run/dbus");
+    // SAFETY: init is single-threaded at this point (before spawning any services)
+    unsafe {
+        std::env::set_var("DBUS_SESSION_BUS_ADDRESS", "unix:path=/run/dbus/session_bus_socket");
+    }
+
     let mut manager = service::ServiceManager::new();
 
     // Load and start services

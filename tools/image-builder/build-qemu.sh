@@ -70,12 +70,36 @@ else
     echo "Busybox already present: $BUSYBOX"
 fi
 
+# --- Step 3b: Get dbus-daemon (musl-linked) from Alpine ---
+DBUS_DIR="$BUILD_DIR/dbus"
+if [ ! -f "$DBUS_DIR/usr/bin/dbus-daemon" ]; then
+    echo ""
+    echo "--- Downloading dbus-daemon (aarch64) from Alpine ---"
+    mkdir -p "$DBUS_DIR"
+    ALPINE_MIRROR="https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64"
+
+    for pkg in \
+        "dbus-1.14.10-r4" \
+        "dbus-libs-1.14.10-r4" \
+        "libexpat-2.7.4-r0" \
+        "musl-1.2.5-r9"; do
+        APK_FILE="$BUILD_DIR/${pkg}.apk"
+        curl -fSL -o "$APK_FILE" "$ALPINE_MIRROR/${pkg}.apk"
+        tar xzf "$APK_FILE" -C "$DBUS_DIR" 2>/dev/null || true
+        rm -f "$APK_FILE"
+    done
+    echo "Downloaded dbus-daemon + dependencies"
+else
+    echo "dbus-daemon already present"
+fi
+
 # --- Step 4: Collect aarch64 shared libraries ---
 AARCH64_LIBDIR="/usr/aarch64-linux-gnu/lib"
 REQUIRED_LIBS=(
     "$AARCH64_LIBDIR/ld-linux-aarch64.so.1"
     "$AARCH64_LIBDIR/libc.so.6"
     "$AARCH64_LIBDIR/libgcc_s.so.1"
+    "$AARCH64_LIBDIR/libm.so.6"
 )
 for lib in "${REQUIRED_LIBS[@]}"; do
     if [ ! -f "$lib" ]; then
@@ -110,6 +134,35 @@ done
 for lib in "${REQUIRED_LIBS[@]}"; do
     cp "$lib" "$INITRAMFS_DIR/lib/"
 done
+
+# dbus-daemon and musl libraries (Alpine musl-linked binaries)
+cp "$DBUS_DIR/usr/bin/dbus-daemon" "$INITRAMFS_DIR/usr/bin/"
+mkdir -p "$INITRAMFS_DIR/usr/share/dbus-1"
+cp -a "$DBUS_DIR/usr/share/dbus-1/"* "$INITRAMFS_DIR/usr/share/dbus-1/" 2>/dev/null || true
+# musl dynamic linker + shared libs for dbus-daemon
+for musl_lib in "$DBUS_DIR/lib/"*.so* "$DBUS_DIR/usr/lib/"*.so*; do
+    [ -f "$musl_lib" ] && cp "$musl_lib" "$INITRAMFS_DIR/lib/"
+done
+# dbus session config
+mkdir -p "$INITRAMFS_DIR/etc/dbus-1"
+cat > "$INITRAMFS_DIR/etc/dbus-1/session.conf" << 'DBUSCONF'
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+  <type>custom</type>
+  <listen>unix:path=/run/dbus/session_bus_socket</listen>
+  <auth>EXTERNAL</auth>
+  <allow_anonymous/>
+  <policy context="default">
+    <allow send_destination="*" eavesdrop="true"/>
+    <allow eavesdrop="true"/>
+    <allow own="*"/>
+  </policy>
+</busconfig>
+DBUSCONF
+# Minimal passwd/group for dbus-daemon UID lookup
+echo "root:x:0:0:root:/root:/bin/sh" > "$INITRAMFS_DIR/etc/passwd"
+echo "root:x:0:" > "$INITRAMFS_DIR/etc/group"
 
 # Overlay rootfs static files (service configs, etc.)
 if [ -d "$ROOT_DIR/rootfs" ]; then

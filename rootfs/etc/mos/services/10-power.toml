@@ -3,3 +3,4 @@ name = "power"
 exec = "/usr/bin/mos-power"
 restart = "always"
 service_type = "simple"
+depends_on = ["dbus"]
