@@ -1,10 +1,11 @@
 // ABOUTME: Wayland protocol handler implementations for the compositor.
-// ABOUTME: Delegates wl_compositor, xdg_shell, shm, seat, data_device, and output protocols.
+// ABOUTME: Delegates wl_compositor, xdg_shell, wlr_layer_shell, shm, seat, data_device, and output protocols.
 
 use std::os::unix::io::OwnedFd;
 
 use smithay::delegate_compositor;
 use smithay::delegate_data_device;
+use smithay::delegate_layer_shell;
 use smithay::delegate_output;
 use smithay::delegate_seat;
 use smithay::delegate_shm;
@@ -30,7 +31,9 @@ use smithay::wayland::selection::SelectionHandler;
 use smithay::wayland::shell::xdg::{
     PopupSurface, PositionerState, ToplevelSurface, XdgShellHandler, XdgShellState,
 };
+use smithay::wayland::shell::wlr_layer::{Layer, LayerSurface, WlrLayerShellHandler, WlrLayerShellState};
 use smithay::wayland::shm::{ShmHandler, ShmState};
+use tracing::info;
 
 use crate::state::{ClientState, Compositor};
 
@@ -137,11 +140,29 @@ impl ServerDndGrabHandler for Compositor {
     fn send(&mut self, _mime_type: String, _fd: OwnedFd, _seat: Seat<Self>) {}
 }
 
+impl WlrLayerShellHandler for Compositor {
+    fn shell_state(&mut self) -> &mut WlrLayerShellState {
+        &mut self.layer_shell_state
+    }
+
+    fn new_layer_surface(
+        &mut self,
+        surface: LayerSurface,
+        _output: Option<smithay::reexports::wayland_server::protocol::wl_output::WlOutput>,
+        _layer: Layer,
+        namespace: String,
+    ) {
+        info!(namespace, "new layer surface");
+        surface.send_configure();
+    }
+}
+
 impl OutputHandler for Compositor {}
 
 delegate_compositor!(Compositor);
 delegate_shm!(Compositor);
 delegate_seat!(Compositor);
 delegate_xdg_shell!(Compositor);
+delegate_layer_shell!(Compositor);
 delegate_data_device!(Compositor);
 delegate_output!(Compositor);

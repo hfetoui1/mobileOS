@@ -13,6 +13,7 @@ use smithay::reexports::wayland_server::{Display, DisplayHandle};
 use smithay::wayland::compositor::{CompositorClientState, CompositorState};
 use smithay::wayland::output::OutputManagerState;
 use smithay::wayland::selection::data_device::DataDeviceState;
+use smithay::wayland::shell::wlr_layer::WlrLayerShellState;
 use smithay::wayland::shell::xdg::XdgShellState;
 use smithay::wayland::shm::ShmState;
 use smithay::wayland::socket::ListeningSocketSource;
@@ -32,6 +33,7 @@ pub struct Compositor {
     pub output_manager_state: OutputManagerState,
     pub seat_state: SeatState<Compositor>,
     pub data_device_state: DataDeviceState,
+    pub layer_shell_state: WlrLayerShellState,
     pub popups: PopupManager,
 
     pub seat: Seat<Compositor>,
@@ -56,6 +58,7 @@ impl Compositor {
         let shm_state = ShmState::new::<Self>(&dh, vec![]);
         let output_manager_state = OutputManagerState::new_with_xdg_output::<Self>(&dh);
         let data_device_state = DataDeviceState::new::<Self>(&dh);
+        let layer_shell_state = WlrLayerShellState::new::<Self>(&dh);
         let popups = PopupManager::default();
 
         let mut seat_state = SeatState::new();
@@ -63,6 +66,7 @@ impl Compositor {
         seat.add_keyboard(Default::default(), 200, 25)
             .expect("failed to add keyboard to seat");
         seat.add_pointer();
+        seat.add_touch();
 
         let space = Space::default();
         let socket_name = Self::init_wayland_listener(display, event_loop);
@@ -82,6 +86,7 @@ impl Compositor {
             output_manager_state,
             seat_state,
             data_device_state,
+            layer_shell_state,
             popups,
             seat,
         }
@@ -151,5 +156,14 @@ mod tests {
         let state = Compositor::new(&mut event_loop, display);
 
         assert_eq!(state.space.elements().count(), 0);
+    }
+
+    #[test]
+    fn seat_has_touch() {
+        let mut event_loop: EventLoop<Compositor> = EventLoop::try_new().unwrap();
+        let display: Display<Compositor> = Display::new().unwrap();
+        let state = Compositor::new(&mut event_loop, display);
+
+        assert!(state.seat.get_touch().is_some());
     }
 }
