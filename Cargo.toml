@@ -33,3 +33,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
 rustix = { version = "1", features = ["fs", "mount", "process", "system"] }
+signal-hook = "0.3"
