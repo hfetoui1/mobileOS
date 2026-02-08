@@ -95,6 +95,12 @@ for lib in "${REQUIRED_LIBS[@]}"; do
     cp "$lib" "$INITRAMFS_DIR/lib/"
 done
 
+# Overlay rootfs static files (service configs, etc.)
+if [ -d "$ROOT_DIR/rootfs" ]; then
+    cp -a "$ROOT_DIR/rootfs/"* "$INITRAMFS_DIR/" 2>/dev/null || true
+    echo "Installed rootfs overlay"
+fi
+
 # Minimal /dev nodes for early boot (devtmpfs takes over once mounted)
 pushd "$INITRAMFS_DIR/dev" > /dev/null
 mknod -m 622 console c 5 1 2>/dev/null || true
