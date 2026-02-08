@@ -4,7 +4,7 @@
 [target.aarch64-unknown-linux-gnu]
 linker = "aarch64-linux-gnu-gcc"
 
-[target.aarch64-unknown-linux-gnu.env]
-PKG_CONFIG_SYSROOT_DIR = { value = "/" }
-PKG_CONFIG_PATH = { value = "/usr/lib/aarch64-linux-gnu/pkgconfig" }
-PKG_CONFIG_ALLOW_CROSS = { value = "1" }
+[env]
+PKG_CONFIG_SYSROOT_DIR = { value = "/", force = true, relative = false }
+PKG_CONFIG_PATH = { value = "/usr/lib/aarch64-linux-gnu/pkgconfig", force = true, relative = false }
+PKG_CONFIG_ALLOW_CROSS = { value = "1", force = true, relative = false }
