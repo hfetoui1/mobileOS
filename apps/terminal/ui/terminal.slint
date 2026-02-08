@@ -1,0 +1,63 @@
+// ABOUTME: Terminal emulator UI with dark theme and monospace text.
+// ABOUTME: Output area, input field, and send callback for shell interaction.
+
+export component TerminalWindow inherits Window {
+    title: "MobileOS Terminal";
+    default-font-family: "monospace";
+    background: #1a1a2e;
+
+    in property <string> output: "";
+    callback command-submitted(string);
+
+    VerticalLayout {
+        padding: 8px;
+        spacing: 4px;
+
+        Rectangle {
+            background: #0d0d1a;
+            border-radius: 4px;
+            vertical-stretch: 1;
+
+            Flickable {
+                viewport-height: output-text.preferred-height;
+                interactive: true;
+
+                output-text := Text {
+                    text: root.output;
+                    color: #00ff00;
+                    font-size: 13px;
+                    font-family: "monospace";
+                    wrap: word-wrap;
+                    width: parent.width - 16px;
+                    x: 8px;
+                    y: 4px;
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 4px;
+            height: 36px;
+
+            Text {
+                text: "$";
+                color: #00ff00;
+                font-size: 14px;
+                font-family: "monospace";
+                vertical-alignment: center;
+                width: 16px;
+            }
+
+            input := TextInput {
+                font-size: 13px;
+                font-family: "monospace";
+                color: #e0e0e0;
+                horizontal-stretch: 1;
+                accepted => {
+                    root.command-submitted(self.text);
+                    self.text = "";
+                }
+            }
+        }
+    }
+}

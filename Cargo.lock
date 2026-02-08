@@ -2731,6 +2731,15 @@ dependencies = [
 [[package]]
 name = "mos-terminal"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "libc",
+ "rustix 1.1.3",
+ "slint",
+ "slint-build",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "moxcms"
