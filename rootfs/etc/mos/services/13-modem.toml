@@ -1,0 +1,5 @@
+[service]
+name = "modem"
+exec = "/usr/bin/mos-modem"
+restart = "always"
+service_type = "simple"

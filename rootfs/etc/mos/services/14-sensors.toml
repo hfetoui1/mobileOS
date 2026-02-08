@@ -1,0 +1,5 @@
+[service]
+name = "sensors"
+exec = "/usr/bin/mos-sensors"
+restart = "always"
+service_type = "simple"

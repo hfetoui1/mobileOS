@@ -1,0 +1,5 @@
+[service]
+name = "power"
+exec = "/usr/bin/mos-power"
+restart = "always"
+service_type = "simple"

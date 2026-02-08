@@ -1,0 +1,5 @@
+[service]
+name = "network"
+exec = "/usr/bin/mos-network"
+restart = "always"
+service_type = "simple"

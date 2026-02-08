@@ -1,0 +1,5 @@
+[service]
+name = "audio"
+exec = "/usr/bin/mos-audio"
+restart = "always"
+service_type = "simple"
