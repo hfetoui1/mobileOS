@@ -2,7 +2,9 @@
 // ABOUTME: Handles display output, window management, and touch input.
 
 mod handlers;
+mod input;
 mod state;
+mod winit;
 
 use smithay::reexports::calloop::EventLoop;
 use smithay::reexports::wayland_server::Display;
@@ -24,9 +26,12 @@ fn main() -> anyhow::Result<()> {
 
     info!(socket = ?state.socket_name, "wayland socket ready");
 
+    winit::init_winit(&mut event_loop, &mut state)?;
+
     // SAFETY: called before spawning any threads, single-threaded at this point
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
 
+    info!("entering event loop");
     event_loop.run(None, &mut state, |_| {})?;
 
     Ok(())
