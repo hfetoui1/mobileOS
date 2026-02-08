@@ -1,0 +1,136 @@
+// ABOUTME: Phone dialer UI with numeric keypad and call controls.
+// ABOUTME: 4x3 grid of dial buttons, phone number display, and call/hangup actions.
+
+component DialButton inherits Rectangle {
+    in property <string> label: "";
+    callback pressed();
+
+    width: 72px;
+    height: 56px;
+    border-radius: 28px;
+    background: #2a2a4a;
+
+    Text {
+        text: root.label;
+        color: white;
+        font-size: 24px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    TouchArea {
+        clicked => { root.pressed(); }
+    }
+}
+
+export component DialerWindow inherits Window {
+    title: "MobileOS Phone";
+    default-font-family: "sans-serif";
+    background: #1a1a2e;
+
+    in-out property <string> phone-number: "";
+    in-out property <string> call-status: "idle";
+    callback digit-pressed(string);
+    callback call-pressed();
+    callback hangup-pressed();
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 12px;
+
+        // Number display
+        Rectangle {
+            height: 64px;
+            background: #0d0d1a;
+            border-radius: 8px;
+
+            Text {
+                text: root.phone-number;
+                color: white;
+                font-size: 28px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+
+        // Status
+        Text {
+            text: root.call-status;
+            color: #a0a0c0;
+            font-size: 14px;
+            horizontal-alignment: center;
+        }
+
+        // Keypad
+        VerticalLayout {
+            spacing: 8px;
+            horizontal-stretch: 0;
+            alignment: center;
+
+            HorizontalLayout { spacing: 8px; alignment: center;
+                DialButton { label: "1"; pressed => { root.digit-pressed("1"); } }
+                DialButton { label: "2"; pressed => { root.digit-pressed("2"); } }
+                DialButton { label: "3"; pressed => { root.digit-pressed("3"); } }
+            }
+            HorizontalLayout { spacing: 8px; alignment: center;
+                DialButton { label: "4"; pressed => { root.digit-pressed("4"); } }
+                DialButton { label: "5"; pressed => { root.digit-pressed("5"); } }
+                DialButton { label: "6"; pressed => { root.digit-pressed("6"); } }
+            }
+            HorizontalLayout { spacing: 8px; alignment: center;
+                DialButton { label: "7"; pressed => { root.digit-pressed("7"); } }
+                DialButton { label: "8"; pressed => { root.digit-pressed("8"); } }
+                DialButton { label: "9"; pressed => { root.digit-pressed("9"); } }
+            }
+            HorizontalLayout { spacing: 8px; alignment: center;
+                DialButton { label: "*"; pressed => { root.digit-pressed("*"); } }
+                DialButton { label: "0"; pressed => { root.digit-pressed("0"); } }
+                DialButton { label: "#"; pressed => { root.digit-pressed("#"); } }
+            }
+        }
+
+        // Call / Hangup buttons
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: center;
+
+            Rectangle {
+                width: 120px;
+                height: 48px;
+                border-radius: 24px;
+                background: #27ae60;
+
+                Text {
+                    text: "Call";
+                    color: white;
+                    font-size: 16px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+
+                TouchArea {
+                    clicked => { root.call-pressed(); }
+                }
+            }
+
+            Rectangle {
+                width: 120px;
+                height: 48px;
+                border-radius: 24px;
+                background: #e74c3c;
+
+                Text {
+                    text: "Hang Up";
+                    color: white;
+                    font-size: 16px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+
+                TouchArea {
+                    clicked => { root.hangup-pressed(); }
+                }
+            }
+        }
+    }
+}

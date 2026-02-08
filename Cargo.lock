@@ -2649,6 +2649,15 @@ dependencies = [
 [[package]]
 name = "mos-dialer"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "slint",
+ "slint-build",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-initd"
@@ -2667,6 +2676,15 @@ dependencies = [
 [[package]]
 name = "mos-messages"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "slint",
+ "slint-build",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-modem"
@@ -2715,6 +2733,15 @@ dependencies = [
 [[package]]
 name = "mos-settings"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "slint",
+ "slint-build",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-shell"

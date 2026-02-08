@@ -1,0 +1,187 @@
+// ABOUTME: SMS messaging UI with conversation list, message thread, and compose area.
+// ABOUTME: Displays mock conversations and sends SMS via D-Bus callback.
+
+struct Conversation {
+    name: string,
+    last-message: string,
+}
+
+struct Message {
+    text: string,
+    incoming: bool,
+}
+
+export component MessagesWindow inherits Window {
+    title: "MobileOS Messages";
+    default-font-family: "sans-serif";
+    background: #1a1a2e;
+
+    in property <[Conversation]> conversations: [
+        { name: "Alice", last-message: "See you tomorrow!" },
+        { name: "Bob", last-message: "Thanks for the info" },
+        { name: "Mom", last-message: "Call me when you can" },
+    ];
+
+    in property <[Message]> messages: [
+        { text: "Hey, how are you?", incoming: true },
+        { text: "Doing great, thanks!", incoming: false },
+        { text: "See you tomorrow!", incoming: true },
+    ];
+
+    in-out property <string> selected-contact: "";
+    in-out property <bool> in-thread: false;
+    callback send-message(string, string);
+
+    VerticalLayout {
+        padding: 0px;
+
+        // Header
+        Rectangle {
+            height: 48px;
+            background: #16213e;
+
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                alignment: space-between;
+
+                if root.in-thread: Rectangle {
+                    width: 48px;
+                    height: 48px;
+
+                    Text {
+                        text: "<";
+                        color: #4a90d9;
+                        font-size: 24px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+
+                    TouchArea {
+                        clicked => { root.in-thread = false; }
+                    }
+                }
+
+                Text {
+                    text: root.in-thread ? root.selected-contact : "Messages";
+                    color: white;
+                    font-size: 18px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        // Conversation list
+        if !root.in-thread: VerticalLayout {
+            vertical-stretch: 1;
+            padding: 8px;
+            spacing: 4px;
+
+            for convo in root.conversations: Rectangle {
+                height: 64px;
+                background: #2a2a4a;
+                border-radius: 8px;
+
+                HorizontalLayout {
+                    padding: 12px;
+                    spacing: 8px;
+
+                    VerticalLayout {
+                        spacing: 4px;
+                        vertical-stretch: 1;
+
+                        Text {
+                            text: convo.name;
+                            color: white;
+                            font-size: 16px;
+                        }
+
+                        Text {
+                            text: convo.last-message;
+                            color: #808090;
+                            font-size: 13px;
+                            overflow: elide;
+                        }
+                    }
+                }
+
+                TouchArea {
+                    clicked => {
+                        root.selected-contact = convo.name;
+                        root.in-thread = true;
+                    }
+                }
+            }
+        }
+
+        // Message thread
+        if root.in-thread: VerticalLayout {
+            vertical-stretch: 1;
+            padding: 8px;
+            spacing: 4px;
+
+            // Message list
+            Flickable {
+                vertical-stretch: 1;
+
+                VerticalLayout {
+                    spacing: 8px;
+                    padding: 4px;
+
+                    for msg in root.messages: Rectangle {
+                        height: 40px;
+                        border-radius: 16px;
+                        background: msg.incoming ? #2a2a4a : #4a90d9;
+                        horizontal-stretch: 0;
+
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+
+                            Text {
+                                text: msg.text;
+                                color: white;
+                                font-size: 14px;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Compose area
+            HorizontalLayout {
+                height: 44px;
+                spacing: 8px;
+
+                compose := TextInput {
+                    font-size: 14px;
+                    color: #e0e0e0;
+                    horizontal-stretch: 1;
+                }
+
+                Rectangle {
+                    width: 64px;
+                    height: 36px;
+                    border-radius: 18px;
+                    background: #27ae60;
+
+                    Text {
+                        text: "Send";
+                        color: white;
+                        font-size: 14px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+
+                    TouchArea {
+                        clicked => {
+                            root.send-message(root.selected-contact, compose.text);
+                            compose.text = "";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,293 @@
+// ABOUTME: System settings UI with WiFi, Display, Sound, and About panels.
+// ABOUTME: Navigation list on the left, detail panel on the right.
+
+import { Slider } from "std-widgets.slint";
+
+struct NetworkEntry {
+    name: string,
+}
+
+export component SettingsWindow inherits Window {
+    title: "MobileOS Settings";
+    default-font-family: "sans-serif";
+    background: #1a1a2e;
+
+    // State
+    in-out property <string> active-panel: "wifi";
+
+    // WiFi properties
+    in property <bool> wifi-connected: false;
+    in property <string> wifi-ssid: "";
+    in property <[NetworkEntry]> wifi-networks: [];
+    callback wifi-scan();
+    callback wifi-connect(string);
+    callback wifi-disconnect();
+
+    // Display properties
+    in-out property <int> brightness: 128;
+    callback brightness-changed(int);
+
+    // Sound properties
+    in-out property <int> volume: 50;
+    in-out property <bool> muted: false;
+    callback volume-changed(int);
+    callback mute-toggled(bool);
+
+    // About properties
+    in property <string> os-version: "MobileOS 0.1.0";
+    in property <int> battery-level: 85;
+
+    VerticalLayout {
+        // Header
+        Rectangle {
+            height: 48px;
+            background: #16213e;
+
+            Text {
+                text: "Settings";
+                color: white;
+                font-size: 18px;
+                x: 16px;
+                vertical-alignment: center;
+            }
+        }
+
+        HorizontalLayout {
+            // Navigation panel
+            Rectangle {
+                width: 140px;
+                background: #12122e;
+
+                VerticalLayout {
+                    padding: 8px;
+                    spacing: 4px;
+
+                    for item in [
+                        { label: "WiFi", id: "wifi" },
+                        { label: "Display", id: "display" },
+                        { label: "Sound", id: "sound" },
+                        { label: "About", id: "about" },
+                    ]: Rectangle {
+                        height: 44px;
+                        border-radius: 8px;
+                        background: root.active-panel == item.id ? #2a2a4a : transparent;
+
+                        Text {
+                            text: item.label;
+                            color: root.active-panel == item.id ? white : #808090;
+                            font-size: 14px;
+                            x: 12px;
+                            vertical-alignment: center;
+                        }
+
+                        TouchArea {
+                            clicked => { root.active-panel = item.id; }
+                        }
+                    }
+                }
+            }
+
+            // Content panel
+            Rectangle {
+                background: #1a1a2e;
+                horizontal-stretch: 1;
+
+                // WiFi panel
+                if root.active-panel == "wifi": VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text { text: "WiFi"; color: white; font-size: 20px; }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text {
+                            text: root.wifi-connected ? "Connected to " + root.wifi-ssid : "Disconnected";
+                            color: #a0a0c0;
+                            font-size: 14px;
+                            vertical-alignment: center;
+                        }
+
+                        if root.wifi-connected: Rectangle {
+                            width: 80px;
+                            height: 32px;
+                            border-radius: 16px;
+                            background: #e74c3c;
+
+                            Text {
+                                text: "Disconnect";
+                                color: white;
+                                font-size: 12px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+
+                            TouchArea {
+                                clicked => { root.wifi-disconnect(); }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 80px;
+                        height: 32px;
+                        border-radius: 16px;
+                        background: #4a90d9;
+
+                        Text {
+                            text: "Scan";
+                            color: white;
+                            font-size: 12px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+
+                        TouchArea {
+                            clicked => { root.wifi-scan(); }
+                        }
+                    }
+
+                    for network in root.wifi-networks: Rectangle {
+                        height: 44px;
+                        background: #2a2a4a;
+                        border-radius: 8px;
+
+                        HorizontalLayout {
+                            padding: 12px;
+                            spacing: 8px;
+
+                            Text {
+                                text: network.name;
+                                color: white;
+                                font-size: 14px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                            }
+
+                            Rectangle {
+                                width: 64px;
+                                height: 28px;
+                                border-radius: 14px;
+                                background: #27ae60;
+
+                                Text {
+                                    text: "Join";
+                                    color: white;
+                                    font-size: 12px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+
+                                TouchArea {
+                                    clicked => { root.wifi-connect(network.name); }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Display panel
+                if root.active-panel == "display": VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text { text: "Display"; color: white; font-size: 20px; }
+
+                    Text {
+                        text: "Brightness: " + root.brightness;
+                        color: #a0a0c0;
+                        font-size: 14px;
+                    }
+
+                    Slider {
+                        minimum: 0;
+                        maximum: 255;
+                        value: root.brightness;
+                        changed(val) => {
+                            root.brightness = round(val);
+                            root.brightness-changed(round(val));
+                        }
+                    }
+                }
+
+                // Sound panel
+                if root.active-panel == "sound": VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text { text: "Sound"; color: white; font-size: 20px; }
+
+                    Text {
+                        text: "Volume: " + root.volume;
+                        color: #a0a0c0;
+                        font-size: 14px;
+                    }
+
+                    Slider {
+                        minimum: 0;
+                        maximum: 100;
+                        value: root.volume;
+                        changed(val) => {
+                            root.volume = round(val);
+                            root.volume-changed(round(val));
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+
+                        Text {
+                            text: "Muted";
+                            color: #a0a0c0;
+                            font-size: 14px;
+                            vertical-alignment: center;
+                        }
+
+                        Rectangle {
+                            width: 48px;
+                            height: 28px;
+                            border-radius: 14px;
+                            background: root.muted ? #4a90d9 : #444;
+
+                            Rectangle {
+                                width: 22px;
+                                height: 22px;
+                                border-radius: 11px;
+                                background: white;
+                                x: root.muted ? 23px : 3px;
+                                y: 3px;
+                            }
+
+                            TouchArea {
+                                clicked => {
+                                    root.muted = !root.muted;
+                                    root.mute-toggled(root.muted);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // About panel
+                if root.active-panel == "about": VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text { text: "About"; color: white; font-size: 20px; }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "Version:"; color: #808090; font-size: 14px; }
+                        Text { text: root.os-version; color: white; font-size: 14px; }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "Battery:"; color: #808090; font-size: 14px; }
+                        Text { text: root.battery-level + "%"; color: white; font-size: 14px; }
+                    }
+                }
+            }
+        }
+    }
+}
