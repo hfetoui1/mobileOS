@@ -11,15 +11,11 @@ INITRAMFS_DIR="$BUILD_DIR/initramfs"
 TARGET="aarch64-unknown-linux-gnu"
 PROFILE="${1:-debug}"
 
-# Kernel version to download (pre-built from Debian/Ubuntu)
-KERNEL_VERSION="6.6.0"
-KERNEL_URL="https://cloud-images.ubuntu.com/noble/current/unpacked/noble-server-cloudimg-arm64-vmlinuz-generic"
-
 echo "=== MobileOS QEMU Image Builder ==="
 echo "Build dir: $BUILD_DIR"
 echo "Profile:   $PROFILE"
 
-mkdir -p "$BUILD_DIR" "$KERNEL_DIR" "$INITRAMFS_DIR"
+mkdir -p "$BUILD_DIR" "$KERNEL_DIR"
 
 # --- Step 1: Cross-compile initd ---
 echo ""
@@ -38,9 +34,8 @@ KERNEL_IMAGE="$KERNEL_DIR/vmlinuz"
 if [ ! -f "$KERNEL_IMAGE" ]; then
     echo ""
     echo "--- Downloading aarch64 kernel ---"
-    # Use a pre-built kernel from Alpine Linux (smaller, simpler)
-    ALPINE_KERNEL_URL="https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/netboot/vmlinuz-lts"
-    curl -fSL -o "$KERNEL_IMAGE" "$ALPINE_KERNEL_URL"
+    curl -fSL -o "$KERNEL_IMAGE" \
+        "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/netboot/vmlinuz-lts"
     echo "Downloaded kernel to $KERNEL_IMAGE"
 else
     echo "Kernel already present: $KERNEL_IMAGE"
@@ -50,33 +45,57 @@ fi
 BUSYBOX="$BUILD_DIR/busybox"
 if [ ! -f "$BUSYBOX" ]; then
     echo ""
-    echo "--- Downloading static busybox (aarch64) ---"
-    BUSYBOX_URL="https://busybox.net/downloads/binaries/1.35.0-aarch64-linux-musl/busybox"
-    curl -fSL -o "$BUSYBOX" "$BUSYBOX_URL"
+    echo "--- Downloading static busybox (aarch64) from Alpine ---"
+    BUSYBOX_APK="$BUILD_DIR/busybox-static.apk"
+    curl -fSL -o "$BUSYBOX_APK" \
+        "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/busybox-static-1.37.0-r14.apk"
+    TMP_EXTRACT="$BUILD_DIR/busybox-extract"
+    mkdir -p "$TMP_EXTRACT"
+    tar xzf "$BUSYBOX_APK" -C "$TMP_EXTRACT"
+    cp "$TMP_EXTRACT/bin/busybox.static" "$BUSYBOX"
     chmod +x "$BUSYBOX"
+    rm -rf "$TMP_EXTRACT" "$BUSYBOX_APK"
     echo "Downloaded busybox to $BUSYBOX"
 else
     echo "Busybox already present: $BUSYBOX"
 fi
 
-# --- Step 4: Assemble initramfs ---
+# --- Step 4: Collect aarch64 shared libraries ---
+AARCH64_LIBDIR="/usr/aarch64-linux-gnu/lib"
+REQUIRED_LIBS=(
+    "$AARCH64_LIBDIR/ld-linux-aarch64.so.1"
+    "$AARCH64_LIBDIR/libc.so.6"
+    "$AARCH64_LIBDIR/libgcc_s.so.1"
+)
+for lib in "${REQUIRED_LIBS[@]}"; do
+    if [ ! -f "$lib" ]; then
+        echo "ERROR: Required library not found: $lib"
+        echo "Install gcc-aarch64-linux-gnu to get the aarch64 sysroot."
+        exit 1
+    fi
+done
+
+# --- Step 5: Assemble initramfs ---
 echo ""
 echo "--- Assembling initramfs ---"
 rm -rf "$INITRAMFS_DIR"
 mkdir -p "$INITRAMFS_DIR"/{bin,sbin,dev,proc,sys,tmp,run,etc,lib}
 
-# Install our init as /init (what the kernel looks for)
+# Our init as /init (what the kernel executes)
 cp "$INIT_BIN" "$INITRAMFS_DIR/init"
 
-# Install busybox and create symlinks
+# Busybox and essential command symlinks
 cp "$BUSYBOX" "$INITRAMFS_DIR/bin/busybox"
-# Create essential symlinks
 for cmd in sh ls cat echo mkdir mount umount ps kill sleep; do
     ln -sf busybox "$INITRAMFS_DIR/bin/$cmd"
 done
 
-# Create minimal /dev nodes
-# (devtmpfs will be mounted by init, but we need console for early boot)
+# Shared libraries for the dynamically linked init
+for lib in "${REQUIRED_LIBS[@]}"; do
+    cp "$lib" "$INITRAMFS_DIR/lib/"
+done
+
+# Minimal /dev nodes for early boot (devtmpfs takes over once mounted)
 pushd "$INITRAMFS_DIR/dev" > /dev/null
 mknod -m 622 console c 5 1 2>/dev/null || true
 mknod -m 666 null c 1 3 2>/dev/null || true
@@ -91,40 +110,7 @@ INITRAMFS_CPIO="$BUILD_DIR/initramfs.cpio.gz"
 pushd "$INITRAMFS_DIR" > /dev/null
 find . | cpio -o -H newc 2>/dev/null | gzip > "$INITRAMFS_CPIO"
 popd > /dev/null
-echo "Created initramfs: $INITRAMFS_CPIO"
-
-# --- Step 5: Get aarch64 shared libraries for dynamically linked binary ---
-# The init binary is dynamically linked, so we need the aarch64 libc
-LIBC_DIR="$BUILD_DIR/aarch64-libs"
-if [ ! -d "$LIBC_DIR" ]; then
-    echo ""
-    echo "--- Collecting aarch64 shared libraries ---"
-    mkdir -p "$LIBC_DIR"
-    # Copy from the cross-compilation toolchain
-    SYSROOT=$(aarch64-linux-gnu-gcc -print-sysroot 2>/dev/null || echo "/usr/aarch64-linux-gnu")
-    if [ -d "$SYSROOT/lib" ]; then
-        cp -a "$SYSROOT/lib/ld-linux-aarch64.so.1" "$LIBC_DIR/" 2>/dev/null || true
-        cp -a "$SYSROOT/lib/aarch64-linux-gnu/libc.so.6" "$LIBC_DIR/" 2>/dev/null || true
-        cp -a "$SYSROOT/lib/aarch64-linux-gnu/libgcc_s.so.1" "$LIBC_DIR/" 2>/dev/null || true
-        cp -a "$SYSROOT/lib/aarch64-linux-gnu/libm.so.6" "$LIBC_DIR/" 2>/dev/null || true
-    fi
-fi
-
-# Add libs to initramfs if they exist
-if [ -d "$LIBC_DIR" ] && ls "$LIBC_DIR"/*.so* 1>/dev/null 2>&1; then
-    mkdir -p "$INITRAMFS_DIR/lib"
-    cp -a "$LIBC_DIR"/* "$INITRAMFS_DIR/lib/"
-    # Also create the standard symlink location
-    mkdir -p "$INITRAMFS_DIR/lib/aarch64-linux-gnu"
-    for f in "$LIBC_DIR"/*; do
-        ln -sf "../$(basename "$f")" "$INITRAMFS_DIR/lib/aarch64-linux-gnu/$(basename "$f")" 2>/dev/null || true
-    done
-    # Rebuild initramfs with libs
-    pushd "$INITRAMFS_DIR" > /dev/null
-    find . | cpio -o -H newc 2>/dev/null | gzip > "$INITRAMFS_CPIO"
-    popd > /dev/null
-    echo "Rebuilt initramfs with shared libraries"
-fi
+echo "Created initramfs: $INITRAMFS_CPIO ($(du -h "$INITRAMFS_CPIO" | cut -f1))"
 
 # --- Step 6: Launch QEMU ---
 echo ""
