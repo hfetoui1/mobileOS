@@ -2623,6 +2623,13 @@ dependencies = [
 [[package]]
 name = "mos-audio"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-compositor"
@@ -2664,10 +2671,24 @@ version = "0.1.0"
 [[package]]
 name = "mos-modem"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-network"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-power"
@@ -2683,6 +2704,13 @@ dependencies = [
 [[package]]
 name = "mos-sensors"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zbus",
+]
 
 [[package]]
 name = "mos-settings"
