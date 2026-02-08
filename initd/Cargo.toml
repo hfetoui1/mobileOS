@@ -1,3 +1,6 @@
+# ABOUTME: MobileOS init system (PID 1).
+# ABOUTME: Mounts filesystems, starts services, and supervises the process tree.
+
 [package]
 name = "mos-initd"
 version.workspace = true
@@ -6,3 +9,4 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+rustix = { workspace = true }
