@@ -17,17 +17,27 @@ echo "Profile:   $PROFILE"
 
 mkdir -p "$BUILD_DIR" "$KERNEL_DIR"
 
-# --- Step 1: Cross-compile initd ---
+# --- Step 1: Cross-compile initd + services ---
+SERVICES=(mos-power mos-audio mos-network mos-modem mos-sensors)
+PACKAGES=("-p" "mos-initd")
+for svc in "${SERVICES[@]}"; do
+    PACKAGES+=("-p" "$svc")
+done
+
 echo ""
-echo "--- Building mos-initd for $TARGET ---"
+echo "--- Building mos-initd + services for $TARGET ---"
 if [ "$PROFILE" = "release" ]; then
-    cargo build -p mos-initd --target "$TARGET" --release
-    INIT_BIN="$ROOT_DIR/target/$TARGET/release/mos-initd"
+    cargo build "${PACKAGES[@]}" --target "$TARGET" --release
+    BIN_DIR="$ROOT_DIR/target/$TARGET/release"
 else
-    cargo build -p mos-initd --target "$TARGET"
-    INIT_BIN="$ROOT_DIR/target/$TARGET/debug/mos-initd"
+    cargo build "${PACKAGES[@]}" --target "$TARGET"
+    BIN_DIR="$ROOT_DIR/target/$TARGET/debug"
 fi
+INIT_BIN="$BIN_DIR/mos-initd"
 echo "Built: $INIT_BIN"
+for svc in "${SERVICES[@]}"; do
+    echo "Built: $BIN_DIR/$svc"
+done
 
 # --- Step 2: Get kernel ---
 KERNEL_IMAGE="$KERNEL_DIR/vmlinuz"
@@ -79,10 +89,16 @@ done
 echo ""
 echo "--- Assembling initramfs ---"
 rm -rf "$INITRAMFS_DIR"
-mkdir -p "$INITRAMFS_DIR"/{bin,sbin,dev,proc,sys,tmp,run,etc,lib}
+mkdir -p "$INITRAMFS_DIR"/{bin,sbin,dev,proc,sys,tmp,run,etc,lib,usr/bin}
 
 # Our init as /init (what the kernel executes)
 cp "$INIT_BIN" "$INITRAMFS_DIR/init"
+
+# Service daemons in /usr/bin (matching TOML exec paths)
+for svc in "${SERVICES[@]}"; do
+    cp "$BIN_DIR/$svc" "$INITRAMFS_DIR/usr/bin/$svc"
+done
+echo "Installed ${#SERVICES[@]} service binaries to /usr/bin/"
 
 # Busybox and essential command symlinks
 cp "$BUSYBOX" "$INITRAMFS_DIR/bin/busybox"
