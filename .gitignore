@@ -1,0 +1,26 @@
+# Build artifacts
+/target/
+**/target/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# QEMU/kernel build artifacts
+kernel/build/
+kernel/linux-*/
+*.img
+*.ext4
+*.initramfs
+*.cpio
+*.cpio.gz
