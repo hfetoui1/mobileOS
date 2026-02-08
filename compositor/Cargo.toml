@@ -6,3 +6,18 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+smithay = { version = "0.7", features = [
+    "backend_drm",
+    "backend_gbm",
+    "backend_libinput",
+    "backend_udev",
+    "backend_session_libseat",
+    "backend_winit",
+    "desktop",
+    "renderer_gl",
+    "wayland_frontend",
+] }
+smithay-drm-extras = { version = "0.1", default-features = false }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
