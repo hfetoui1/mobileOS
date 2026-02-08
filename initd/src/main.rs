@@ -2,6 +2,7 @@
 // ABOUTME: Mounts filesystems, starts services, and supervises the process tree.
 
 mod config;
+mod dependency;
 mod logging;
 mod mount;
 
