@@ -5,6 +5,7 @@ mod config;
 mod dependency;
 mod logging;
 mod mount;
+mod service;
 
 use rustix::process::{getpid, waitpid, WaitOptions};
 use std::process::Command;
